@@ -24,6 +24,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	bzl "github.com/bazelbuild/buildifier/core"
 )
 
 const (
@@ -106,18 +108,24 @@ func (v *Vendorer) addGeneratedOpenAPIRule(paths []string) error {
 	sort.Strings(vendorTargets)
 
 	pkgPath := filepath.Join("pkg", "generated", "openapi")
-	// If we haven't walked this package yet, walk it so there is a go_library rule to modify
-	if len(v.newRules[pkgPath]) == 0 {
-		if err := v.updateSinglePkg(pkgPath); err != nil {
-			return err
+	if v.cfg.ManageGoRules {
+		for _, r := range v.newRules[pkgPath] {
+			if r.Name() == "go_default_library" {
+				r.SetAttr("openapi_targets", asExpr(openAPITargets))
+				r.SetAttr("vendor_targets", asExpr(vendorTargets))
+				break
+			}
 		}
-	}
-	for _, r := range v.newRules[pkgPath] {
-		if r.Name() == "go_default_library" {
-			r.SetAttr("openapi_targets", asExpr(openAPITargets))
-			r.SetAttr("vendor_targets", asExpr(vendorTargets))
-			break
-		}
+	} else {
+		// If kazel is not managing go rules, update the custom rule instead of munging the go_library.
+		v.addRules(pkgPath, []*bzl.Rule{
+			newRule(RuleTypeOpenAPILibrary,
+				func(_ ruleType) string { return "generated_openapi_library" },
+				map[string]bzl.Expr{
+					"openapi_targets": asExpr(openAPITargets),
+					"vendor_targets":  asExpr(vendorTargets),
+				}),
+		})
 	}
 	return nil
 }
