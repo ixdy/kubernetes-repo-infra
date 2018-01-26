@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "collection.go",
+        "constraints.go",
+        "doc.go",
+        "error.go",
+        "magic.go",
+        "parse.go",
+        "range.go",
+        "union.go",
+        "version.go",
+    ],
+    importpath = "github.com/Masterminds/semver",
+    visibility = ["//visibility:public"],
+)
