@@ -1,3 +1,6 @@
+required = [
+  "github.com/golang/dep/cmd/dep"
+]
 
 [[constraint]]
   branch = "master"
@@ -10,3 +13,12 @@
 [[constraint]]
   branch = "master"
   name = "golang.org/x/build"
+
+[[constraint]]
+  name = "github.com/golang/dep"
+  version = "v0.4.1"
+
+[prune]
+  unused-packages = true
+  go-tests = true
+  non-go = true
