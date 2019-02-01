@@ -19,29 +19,39 @@ KUBERNETES_AUTHORS = "Kubernetes Authors <kubernetes-dev+release@googlegroups.co
 
 KUBERNETES_HOMEPAGE = "http://kubernetes.io"
 
+GOARCH_TO_DEBARCH = {
+    "amd64": "amd64",
+    "arm": "armhf",
+    "arm64": "arm64",
+    "ppc64le": "ppc64el",
+    "s390x": "s390x",
+}
+
 def k8s_deb(name, **kwargs):
-    pkg_deb(
-        name = name,
-        architecture = "amd64",
-        data = name + "-data",
-        homepage = KUBERNETES_HOMEPAGE,
-        maintainer = KUBERNETES_AUTHORS,
-        package = name,
-        **kwargs
-    )
+    for goarch, debarch in GOARCH_TO_DEBARCH.items():
+        pkg_deb(
+            name = name + "-" + goarch,
+            architecture = debarch,
+            data = select({"@io_bazel_rules_go//go/platform:" + goarch: name + "-data-" + goarch}),
+            homepage = KUBERNETES_HOMEPAGE,
+            maintainer = KUBERNETES_AUTHORS,
+            package = name,
+            **kwargs
+        )
 
 def deb_data(name, data = []):
     deps = []
-    for i, info in enumerate(data):
-        dname = "%s-deb-data-%s" % (name, i)
-        deps += [dname]
+    for goarch, debarch in GOARCH_TO_DEBARCH.items():
+        for i, info in enumerate(data):
+            dname = "%s-deb-data-%s-%s" % (name, goarch, i)
+            deps += [dname]
+            pkg_tar(
+                name = dname,
+                srcs = info["files"],
+                mode = info["mode"],
+                package_dir = info["dir"],
+            )
         pkg_tar(
-            name = dname,
-            srcs = info["files"],
-            mode = info["mode"],
-            package_dir = info["dir"],
+            name = name + "-data-" + goarch,
+            deps = select({"@io_bazel_rules_go//go/platform:" + goarch: deps}),
         )
-    pkg_tar(
-        name = name + "-data",
-        deps = deps,
-    )
