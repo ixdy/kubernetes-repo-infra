@@ -589,9 +589,9 @@ func (ts *timeString) Set(v string) error {
 	var t time.Time
 	switch v {
 	case "":
-		// Use zero
+		t = time.Unix(0, 0)
 	case portableTime:
-		*ts = timeString(y2k)
+		t = y2k
 	default:
 		unix, err := strconv.ParseInt(v, 10, 64)
 		if err != nil {
